@@ -3,7 +3,8 @@ export type AxisKey =
   | "tangled_state"
   | "hidden_calls"
   | "exception_surface"
-  | "naming";
+  | "naming"
+  | "malformed";
 
 export const AXIS_LABELS: Record<AxisKey, string> = {
   complexity: "complexity",
@@ -11,6 +12,7 @@ export const AXIS_LABELS: Record<AxisKey, string> = {
   hidden_calls: "hidden calls",
   exception_surface: "exception surface",
   naming: "naming",
+  malformed: "malformed",
 };
 
 export const SCORE_DESCRIPTION =
@@ -41,6 +43,10 @@ export const AXIS_DESCRIPTIONS: Record<AxisKey, string> = {
   naming:
     "Combines token entropy and identifier-character entropy — essentially how varied or " +
     "inconsistent the names and tokens on this line are compared to typical, well-named code.",
+  malformed:
+    "Whether this line parses as valid Python at all. A dedicated channel, separate from the " +
+    "SNN's learned signal — if the line doesn't parse, this axis is forced to 1.0 and the line " +
+    "is flagged regardless of what the other axes say.",
 };
 
 export type Axes = Record<AxisKey, number>;
@@ -55,12 +61,25 @@ export type RawFeatures = {
   name_flow: number;
   call_graph_shape: number;
   exception_density: number;
+  parse_error: number;
+  global_reach: number;
+  attr_reach: number;
+  call_graph_depth: number;
+};
+
+export type LineageEntry = {
+  kind: string;
+  label: string;
+  line: number;
 };
 
 export type LineContext = {
   function: string;
   span: [number, number];
   function_score: number;
+  function_score_before?: number;
+  function_score_delta?: number;
+  lineage?: LineageEntry[];
 };
 
 export type LineFeedback = {

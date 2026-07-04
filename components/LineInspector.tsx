@@ -19,6 +19,7 @@ const AXIS_ORDER: AxisKey[] = [
   "hidden_calls",
   "exception_surface",
   "naming",
+  "malformed",
 ];
 
 export default function LineInspector({
@@ -113,11 +114,29 @@ export default function LineInspector({
               )}
 
               {lineFeedback.context && (
-                <p className="mt-1.5 font-mono text-[10px] text-(--text-muted)">
-                  inside <span className="text-(--text-secondary)">{lineFeedback.context.function}</span>{" "}
-                  (lines {lineFeedback.context.span[0]}–{lineFeedback.context.span[1]}) · fn score{" "}
-                  {lineFeedback.context.function_score.toFixed(2)}
-                </p>
+                <>
+                  <p className="mt-1.5 font-mono text-[10px] text-(--text-muted)">
+                    inside <span className="text-(--text-secondary)">{lineFeedback.context.function}</span>{" "}
+                    (lines {lineFeedback.context.span[0]}–{lineFeedback.context.span[1]}) · fn score{" "}
+                    {lineFeedback.context.function_score.toFixed(2)}
+                    {lineFeedback.context.function_score_delta !== undefined && (
+                      <span className={lineFeedback.context.function_score_delta >= 0 ? "text-(--danger-light)" : "text-(--success)"}>
+                        {" "}
+                        {lineFeedback.context.function_score_delta >= 0 ? "↑" : "↓"}
+                        {Math.abs(lineFeedback.context.function_score_delta).toFixed(2)} vs base
+                      </span>
+                    )}
+                  </p>
+                  {lineFeedback.context.lineage && lineFeedback.context.lineage.length > 0 && (
+                    <p className="mt-1 font-mono text-[10px] text-(--text-muted)">
+                      {lineFeedback.context.lineage
+                        .slice()
+                        .reverse()
+                        .map((l) => l.label)
+                        .join(" ⟶ ")}
+                    </p>
+                  )}
+                </>
               )}
             </>
           )}

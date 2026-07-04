@@ -1,4 +1,4 @@
-import { AXIS_LABELS, Axes, AxisKey, CompileResult, LineFeedback } from "./types";
+import { AXIS_LABELS, Axes, AxisKey, CompileResult, LineageEntry, LineFeedback } from "./types";
 
 // Simple seeded RNG so the same code produces stable-ish "gut reactions"
 // instead of reshuffling on every keystroke debounce tick.
@@ -38,7 +38,21 @@ const AXIS_REASON_CLAUSE: Record<AxisKey, string> = {
   hidden_calls: "delegates to opaque, non-stdlib calls",
   exception_surface: "heavy try/except/raise density",
   naming: "unusually dense or unusual identifier naming",
+  malformed: "doesn't parse as valid Python",
 };
+
+// Mirrors the backend's parse_error override: this is a hand-picked heuristic
+// stand-in for ast.parse() failing, not a real parser. It catches the
+// canonical case (an `=` typo'd for `==` inside a condition) since that's
+// the one the backend's testbed showcases for this axis.
+const COMPOUND_ASSIGNMENT = /==|!=|<=|>=|:=|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|>>=|<<=/g;
+
+function detectMalformed(text: string): boolean {
+  const match = text.match(/^\s*(if|elif|while)\b(.*):\s*(#.*)?$/);
+  if (!match) return false;
+  const condition = match[2].replace(COMPOUND_ASSIGNMENT, "");
+  return /=/.test(condition);
+}
 
 function clip01(x: number): number {
   return Math.max(0, Math.min(1, x));
@@ -56,7 +70,7 @@ function shannonEntropy(text: string): number {
   return entropy;
 }
 
-function computeAxes(text: string, rand: () => number): Axes {
+function computeAxes(text: string, rand: () => number, malformed: boolean): Axes {
   const indent = text.match(/^\s*/)?.[0].length ?? 0;
   const nestingSignal = Math.min(indent / 16, 1);
   const lengthSignal = Math.min(text.length / 100, 1);
@@ -77,6 +91,7 @@ function computeAxes(text: string, rand: () => number): Axes {
       ? clip01(0.6 + rand() * 0.4)
       : clip01(rand() * 0.2),
     naming: clip01(entropy * 0.7 + rand() * 0.3),
+    malformed: malformed ? 1 : 0,
   };
 }
 
@@ -91,16 +106,63 @@ function scoreFromAxes(axes: Axes, rand: () => number): number {
 }
 
 function topTwoAxes(axes: Axes): AxisKey[] {
-  return (Object.keys(axes) as AxisKey[]).sort((a, b) => axes[b] - axes[a]).slice(0, 2);
+  return (Object.keys(axes) as AxisKey[])
+    .filter((k) => k !== "malformed")
+    .sort((a, b) => axes[b] - axes[a])
+    .slice(0, 2);
 }
 
-function buildReason(axes: Axes): string {
+function buildReason(axes: Axes, malformed: boolean): string {
+  if (malformed) {
+    return (
+      "this doesn't parse as valid Python — a bare `=` inside an `if`/`elif`/`while` " +
+      "condition is a typo for `==`"
+    );
+  }
   const [first, second] = topTwoAxes(axes);
   return (
     `high on ${AXIS_LABELS[first]} (${axes[first].toFixed(2)}) + ` +
     `${AXIS_LABELS[second]} (${axes[second].toFixed(2)}) — ` +
     `${AXIS_REASON_CLAUSE[first]}; ${AXIS_REASON_CLAUSE[second]}`
   );
+}
+
+function computeLineage(lines: string[], lineIdx: number): LineageEntry[] {
+  const BLOCK_KIND: Record<string, string> = {
+    if: "If", elif: "If", else: "If", for: "For", while: "While",
+    try: "Try", except: "Try", finally: "Try", with: "With",
+    def: "FunctionDef", class: "ClassDef",
+  };
+
+  const entries: LineageEntry[] = [];
+  let currentIndent = lines[lineIdx].match(/^\s*/)?.[0].length ?? 0;
+
+  for (let i = lineIdx - 1; i >= 0 && entries.length < 3; i--) {
+    const raw = lines[i];
+    if (raw.trim().length === 0) continue;
+    const indent = raw.match(/^\s*/)?.[0].length ?? 0;
+    if (indent >= currentIndent) continue;
+
+    const match = raw.match(/^\s*(if|elif|else|for|while|try|except|finally|with|def|class)\b\s*(.*?):?\s*$/);
+    if (!match) {
+      currentIndent = indent;
+      continue;
+    }
+
+    const keyword = match[1];
+    const rest = match[2].trim();
+    const label =
+      keyword === "def"
+        ? `function \`${rest.split("(")[0].trim()}\``
+        : keyword === "class"
+          ? `class \`${rest.split(/[(:]/)[0].trim()}\``
+          : `\`${keyword}${rest ? ` ${rest}` : ""}\``;
+
+    entries.push({ kind: BLOCK_KIND[keyword], label, line: i + 1 });
+    currentIndent = indent;
+  }
+
+  return entries;
 }
 
 function enclosingFunctionSpan(
@@ -142,11 +204,12 @@ export async function fakeCompile(code: string): Promise<CompileResult> {
 
   const scored = lines.map((text, idx) => {
     if (text.trim().length === 0) {
-      return { line: idx + 1, score: 0, axes: null as Axes | null };
+      return { line: idx + 1, score: 0, axes: null as Axes | null, malformed: false };
     }
-    const axes = computeAxes(text, rand);
-    const score = scoreFromAxes(axes, rand);
-    return { line: idx + 1, score, axes };
+    const malformed = detectMalformed(text);
+    const axes = computeAxes(text, rand, malformed);
+    const score = malformed ? 1 : scoreFromAxes(axes, rand);
+    return { line: idx + 1, score, axes, malformed };
   });
 
   const feedback: LineFeedback[] = scored.map((s, idx) => {
@@ -161,11 +224,12 @@ export async function fakeCompile(code: string): Promise<CompileResult> {
           hidden_calls: 0,
           exception_surface: 0,
           naming: 0,
+          malformed: 0,
         },
       };
     }
 
-    const flag = s.score >= FLAG_THRESHOLD;
+    const flag = s.malformed || s.score >= FLAG_THRESHOLD;
     if (!flag) {
       return { line: s.line, score: s.score, flag: false, axes: s.axes };
     }
@@ -183,6 +247,7 @@ export async function fakeCompile(code: string): Promise<CompileResult> {
                 Math.max(span.end - span.start + 1, 1)) *
                 100
             ) / 100,
+          lineage: computeLineage(lines, idx),
         }
       : undefined;
 
@@ -191,7 +256,7 @@ export async function fakeCompile(code: string): Promise<CompileResult> {
       score: s.score,
       flag: true,
       axes: s.axes,
-      reason: buildReason(s.axes),
+      reason: buildReason(s.axes, s.malformed),
       context,
       raw_features: {
         nesting_depth: clip01(s.axes.complexity * 0.9 + rand() * 0.1),
@@ -203,6 +268,10 @@ export async function fakeCompile(code: string): Promise<CompileResult> {
         name_flow: clip01(s.axes.tangled_state * 0.7 + rand() * 0.2),
         call_graph_shape: s.axes.hidden_calls,
         exception_density: s.axes.exception_surface,
+        parse_error: s.malformed ? 1 : 0,
+        global_reach: clip01(s.axes.tangled_state * 0.5 + rand() * 0.2),
+        attr_reach: clip01((lines[idx].includes("self.") ? 0.4 : 0) + rand() * 0.3),
+        call_graph_depth: clip01(s.axes.hidden_calls * 0.6 + rand() * 0.2),
       },
     };
   });
@@ -218,6 +287,7 @@ export async function fakeCompile(code: string): Promise<CompileResult> {
       hidden_calls: 0,
       exception_surface: 0,
       naming: 0,
+      malformed: 0,
     };
     for (const f of flagged) {
       (Object.keys(totals) as AxisKey[]).forEach((k) => {
