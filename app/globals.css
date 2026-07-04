@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0b0d;
-  --foreground: #e7e9ec;
+  --background: #1e1e1e;
+  --foreground: #cccccc;
 }
 
 @theme inline {
@@ -20,7 +20,33 @@ body {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", var(--font-geist-sans), sans-serif;
+  font-size: 13px;
+}
+
+/* VS Code-style thin scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #79797966 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #79797966;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #79797999;
 }
 
 @keyframes spike-grow {

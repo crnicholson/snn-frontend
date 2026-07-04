@@ -13,12 +13,34 @@ export const AXIS_LABELS: Record<AxisKey, string> = {
   naming: "naming",
 };
 
+export const SCORE_DESCRIPTION =
+  "The line's overall suspicion score: how much this line's spiking activity " +
+  "deviates from what the SNN sees as \"normal\" for senior, real-world Python " +
+  "(percentile rank against a reference corpus). Lines are only flagged well " +
+  "above the middle of that range.";
+
 export const AXIS_DESCRIPTIONS: Record<AxisKey, string> = {
-  complexity: "Deeply nested / branchy control flow.",
-  tangled_state: "Variables reach across long distances in this line.",
-  hidden_calls: "Delegates to opaque, non-stdlib calls.",
-  exception_surface: "Try/except/raise density is high for the scope.",
-  naming: "Unusual identifier density or character distribution.",
+  complexity:
+    "Blends nesting depth, cyclomatic branching (if/for/while/try/etc.), and raw length. " +
+    "A higher value means this line sits inside noticeably deep or branchy control flow — " +
+    "more tangled than a typical straight-line statement.",
+  tangled_state:
+    "Measures how far a variable's use is from where it was defined, plus how many distinct " +
+    "names get touched at once. A high value flags \"spooky action at a distance\" — this line " +
+    "depends on state that was set up much earlier or reaches across a lot of names, making it " +
+    "harder to reason about in isolation.",
+  hidden_calls:
+    "Reflects how much this line delegates to calls whose implementation isn't visible right " +
+    "here — local/unresolved function calls and method calls weigh more than built-ins like " +
+    "len() or range(). A high value means a lot of the line's real behavior is hidden behind " +
+    "calls elsewhere.",
+  exception_surface:
+    "Tracks density of try/except/raise machinery around this line relative to the surrounding " +
+    "code's size. A higher value means there's meaningful exception handling nearby, worth a " +
+    "second look at what's being caught (and whether it's too broad).",
+  naming:
+    "Combines token entropy and identifier-character entropy — essentially how varied or " +
+    "inconsistent the names and tokens on this line are compared to typical, well-named code.",
 };
 
 export type Axes = Record<AxisKey, number>;
@@ -77,6 +99,17 @@ export type Mode = "fake" | "server";
 export type Settings = {
   mode: Mode;
   serverUrl: string;
+  snnEnabled: boolean;
+  lintEnabled: boolean;
+};
+
+export type LintSeverity = "error" | "warning";
+
+export type LintFinding = {
+  line: number;
+  rule: string;
+  message: string;
+  severity: LintSeverity;
 };
 
 export type Language =

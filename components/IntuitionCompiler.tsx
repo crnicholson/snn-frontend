@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeEditor, { JumpTarget } from "./CodeEditor";
 import TopBar from "./TopBar";
 import VerdictBanner from "./VerdictBanner";
 import SpikeTimeline from "./SpikeTimeline";
 import LineInspector from "./LineInspector";
 import ModeBanner from "./ModeBanner";
+import StatusBar from "./StatusBar";
 import { fakeCompile } from "@/lib/fakeCompile";
 import { serverCompile } from "@/lib/serverCompile";
+import { fakeLint } from "@/lib/fakeLint";
 import { fetchHealth } from "@/lib/health";
 import {
   loadCode,
@@ -27,7 +29,12 @@ export default function IntuitionCompiler() {
   const [ready, setReady] = useState(false);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState<Language>("python");
-  const [settings, setSettings] = useState<Settings>({ mode: "fake", serverUrl: "" });
+  const [settings, setSettings] = useState<Settings>({
+    mode: "fake",
+    serverUrl: "",
+    snnEnabled: true,
+    lintEnabled: true,
+  });
 
   const [result, setResult] = useState<CompileResult | null>(null);
   const [isCompiling, setIsCompiling] = useState(false);
@@ -107,7 +114,7 @@ export default function IntuitionCompiler() {
 
   // Debounced auto-compile whenever code, language, or mode/server changes.
   useEffect(() => {
-    if (!ready || !code.trim() || languageGated) return;
+    if (!ready || !code.trim() || languageGated || !settings.snnEnabled) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
@@ -118,7 +125,7 @@ export default function IntuitionCompiler() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, language, settings.mode, settings.serverUrl, ready, languageGated]);
+  }, [code, language, settings.mode, settings.serverUrl, settings.snnEnabled, ready, languageGated]);
 
   // Debounced /health poll whenever server mode is active or the URL changes.
   useEffect(() => {
@@ -152,6 +159,11 @@ export default function IntuitionCompiler() {
     };
   }, [ready, settings.mode, settings.serverUrl]);
 
+  const lintFindings = useMemo(
+    () => (settings.lintEnabled ? fakeLint(code, language) : []),
+    [code, language, settings.lintEnabled]
+  );
+
   function handleFileLoaded(fileCode: string, fileLanguage: Language) {
     setCode(fileCode);
     setLanguage(fileLanguage);
@@ -168,19 +180,22 @@ export default function IntuitionCompiler() {
   }, []);
 
   if (!ready) {
-    return <div className="flex h-full items-center justify-center bg-[#0a0b0d]" />;
+    return <div className="flex h-full items-center justify-center bg-[#1e1e1e]" />;
   }
 
   const hasCode = code.trim().length > 0;
-  const showResults = hasCode && !languageGated;
+  const showSnn = hasCode && !languageGated && settings.snnEnabled;
+  const showLint = hasCode && settings.lintEnabled;
   const notice = languageGated
     ? `Mr. Spiky only reads ${health!.supported_languages.join(", ")} — switch the language above to analyze this snippet.`
     : null;
-  const visibleLines = showResults ? (result?.lines ?? []) : [];
+  const visibleLines = showSnn ? (result?.lines ?? []) : [];
+  const visibleLintFindings = showLint ? lintFindings : [];
   const inspectorFeedback = visibleLines.find((l) => l.line === selectedLine) ?? null;
+  const inspectorLintFindings = visibleLintFindings.filter((f) => f.line === selectedLine);
 
   return (
-    <div className="flex h-full flex-col bg-[#0a0b0d]">
+    <div className="flex h-full flex-col bg-[#1e1e1e]">
       <TopBar
         language={language}
         onLanguageChange={setLanguage}
@@ -190,34 +205,50 @@ export default function IntuitionCompiler() {
         health={health}
         healthError={healthError}
       />
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3 lg:flex-row">
-        <div className="min-h-80 flex-1 overflow-hidden rounded-md border border-[#22262b]">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <div className="min-h-80 flex-1 overflow-hidden">
           <CodeEditor
             code={code}
             onChange={setCode}
             language={language}
             lineFeedback={visibleLines}
+            lintFindings={visibleLintFindings}
             onSelectLine={handleSelectLine}
             jumpTarget={jumpTarget}
           />
         </div>
-        <div className="flex w-full flex-col gap-3 lg:w-85">
-          <ModeBanner health={settings.mode === "server" ? health : null} />
+        <div className="flex w-full flex-col border-t border-[#3c3c3c] lg:w-80 lg:border-l lg:border-t-0">
+          <ModeBanner health={settings.mode === "server" && settings.snnEnabled ? health : null} />
           <VerdictBanner
-            result={showResults ? result : null}
-            isCompiling={showResults && isCompiling}
-            error={showResults ? error : null}
+            snnEnabled={settings.snnEnabled}
+            lintEnabled={settings.lintEnabled}
+            result={showSnn ? result : null}
+            isCompiling={showSnn && isCompiling}
+            error={showSnn ? error : null}
             notice={notice}
+            lintFindings={visibleLintFindings}
             onJumpToLine={handleJumpToLine}
           />
-          <SpikeTimeline lines={visibleLines} runId={runId} />
+          <SpikeTimeline lines={visibleLines} runId={runId} enabled={settings.snnEnabled} />
           <LineInspector
             selectedLine={selectedLine}
             lineFeedback={inspectorFeedback}
-            dominantAxis={showResults ? (result?.dominant_axis ?? null) : null}
+            dominantAxis={showSnn ? (result?.dominant_axis ?? null) : null}
+            lintFindings={inspectorLintFindings}
+            snnEnabled={settings.snnEnabled}
+            lintEnabled={settings.lintEnabled}
           />
         </div>
       </div>
+      <StatusBar
+        settings={settings}
+        language={language}
+        health={health}
+        healthError={healthError}
+        result={showSnn ? result : null}
+        lintFindings={visibleLintFindings}
+        selectedLine={selectedLine}
+      />
     </div>
   );
 }

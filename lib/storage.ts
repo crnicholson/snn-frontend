@@ -9,6 +9,8 @@ const KEYS = {
 export const DEFAULT_SETTINGS: Settings = {
   mode: "fake",
   serverUrl: "http://localhost:8000",
+  snnEnabled: true,
+  lintEnabled: true,
 };
 
 const DEFAULT_CODE = `def calculate_total(items, discount=None, apply_tax=True, region="US", extra=None):

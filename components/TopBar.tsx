@@ -38,84 +38,118 @@ export default function TopBar({
   }
 
   const dotColor = healthError
-    ? "bg-[#ff5468]"
+    ? "bg-[#f14c4c]"
     : health?.mode === "mock"
-      ? "bg-[#ffb454]"
+      ? "bg-[#cca700]"
       : health
-        ? "bg-[#3ddc84]"
-        : "bg-[#4d525c]";
+        ? "bg-[#89d185]"
+        : "bg-[#6a6a6a]";
 
   return (
-    <header className="flex flex-wrap items-center gap-3 border-b border-[#22262b] bg-[#0a0b0d] px-4 py-2.5">
-      <div className="mr-2 flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-[#ffb454] shadow-[0_0_8px_#ffb454]" />
-        <h1 className="font-mono text-sm font-semibold tracking-tight text-[#e7e9ec]">
-          Mr. Spiky
-        </h1>
+    <div className="flex shrink-0 flex-col">
+      {/* Title bar */}
+      <div className="relative flex h-8 shrink-0 items-center justify-center bg-[#3c3c3c] px-3">
+        <p className="text-xs text-[#cccccc]/80">Mr. Spiky — Intuition Compiler</p>
       </div>
 
-      <div className="flex items-center gap-1 rounded-md border border-[#22262b] bg-[#111317] p-0.5">
-        <button
-          onClick={() => setMode("fake")}
-          className={`rounded px-2.5 py-1 font-mono text-xs transition-colors ${
-            settings.mode === "fake"
-              ? "bg-[#ffb454] text-[#0a0b0d]"
-              : "text-[#868c98] hover:text-[#e7e9ec]"
-          }`}
-        >
-          fake
-        </button>
-        <button
-          onClick={() => setMode("server")}
-          className={`rounded px-2.5 py-1 font-mono text-xs transition-colors ${
-            settings.mode === "server"
-              ? "bg-[#ffb454] text-[#0a0b0d]"
-              : "text-[#868c98] hover:text-[#e7e9ec]"
-          }`}
-        >
-          server
-        </button>
-      </div>
-
-      {settings.mode === "server" && (
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
-            title={healthError ?? (health ? `mode: ${health.mode}` : "not connected")}
-          />
-          <input
-            value={settings.serverUrl}
-            onChange={(e) => onSettingsChange({ ...settings, serverUrl: e.target.value })}
-            placeholder="http://localhost:8000"
-            className="w-56 rounded border border-[#22262b] bg-[#111317] px-2 py-1 font-mono text-xs text-[#e7e9ec] outline-none focus:border-[#ffb454]/60"
-          />
-          {health && (
-            <span className="rounded border border-[#22262b] px-1.5 py-0.5 font-mono text-[10px] uppercase text-[#868c98]">
-              {health.mode}
-            </span>
-          )}
+      {/* Tab / toolbar strip */}
+      <header className="flex flex-wrap items-center gap-2 border-b border-[#000000]/40 bg-[#252526] px-2 py-1.5">
+        <div className="flex items-center overflow-hidden rounded-sm border border-[#454545]">
+          <button
+            onClick={() => setMode("fake")}
+            className={`px-3 py-1 text-xs transition-colors ${
+              settings.mode === "fake"
+                ? "bg-[#1e1e1e] text-[#ffffff]"
+                : "bg-[#2d2d2d] text-[#969696] hover:text-[#cccccc]"
+            }`}
+          >
+            fake
+          </button>
+          <button
+            onClick={() => setMode("server")}
+            className={`border-l border-[#454545] px-3 py-1 text-xs transition-colors ${
+              settings.mode === "server"
+                ? "bg-[#1e1e1e] text-[#ffffff]"
+                : "bg-[#2d2d2d] text-[#969696] hover:text-[#cccccc]"
+            }`}
+          >
+            server
+          </button>
         </div>
-      )}
 
-      <select
-        value={language}
-        onChange={(e) => onLanguageChange(e.target.value as Language)}
-        className="rounded border border-[#22262b] bg-[#111317] px-2 py-1 font-mono text-xs text-[#e7e9ec] outline-none focus:border-[#ffb454]/60"
-      >
-        {LANGUAGE_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        <div className="flex items-center gap-1.5">
+          <label
+            className={`flex cursor-pointer items-center gap-1.5 rounded-sm border px-2 py-1 text-xs font-medium transition-colors ${
+              settings.snnEnabled
+                ? "border-[#f14c4c]/50 bg-[#f14c4c]/10 text-[#f48771]"
+                : "border-[#454545] text-[#6a6a6a] hover:text-[#969696]"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={settings.snnEnabled}
+              onChange={(e) => onSettingsChange({ ...settings, snnEnabled: e.target.checked })}
+              className="accent-[#f14c4c]"
+            />
+            SNN
+          </label>
+          <label
+            className={`flex cursor-pointer items-center gap-1.5 rounded-sm border px-2 py-1 text-xs font-medium transition-colors ${
+              settings.lintEnabled
+                ? "border-[#4fc1ff]/50 bg-[#4fc1ff]/10 text-[#4fc1ff]"
+                : "border-[#454545] text-[#6a6a6a] hover:text-[#969696]"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={settings.lintEnabled}
+              onChange={(e) => onSettingsChange({ ...settings, lintEnabled: e.target.checked })}
+              className="accent-[#4fc1ff]"
+            />
+            Lint
+          </label>
+        </div>
 
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        className="rounded border border-[#22262b] bg-[#111317] px-2.5 py-1 font-mono text-xs text-[#c7cbd1] transition-colors hover:border-[#ffb454]/60 hover:text-[#ffb454]"
-      >
-        upload file
-      </button>
-      <input ref={fileInputRef} type="file" onChange={handleFile} className="hidden" />
-    </header>
+        {settings.mode === "server" && (
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${dotColor}`}
+              title={healthError ?? (health ? `mode: ${health.mode}` : "not connected")}
+            />
+            <input
+              value={settings.serverUrl}
+              onChange={(e) => onSettingsChange({ ...settings, serverUrl: e.target.value })}
+              placeholder="http://localhost:8000"
+              className="w-56 rounded-sm border border-[#3c3c3c] bg-[#3c3c3c] px-2 py-1 text-xs text-[#cccccc] outline-none focus:border-[#007fd4]"
+            />
+            {health && (
+              <span className="rounded-sm border border-[#454545] px-1.5 py-0.5 font-mono text-[10px] uppercase text-[#969696]">
+                {health.mode}
+              </span>
+            )}
+          </div>
+        )}
+
+        <select
+          value={language}
+          onChange={(e) => onLanguageChange(e.target.value as Language)}
+          className="rounded-sm border border-[#3c3c3c] bg-[#3c3c3c] px-2 py-1 text-xs text-[#cccccc] outline-none focus:border-[#007fd4]"
+        >
+          {LANGUAGE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="rounded-sm bg-[#0e639c] px-3 py-1 text-xs text-white transition-colors hover:bg-[#1177bb]"
+        >
+          Open File...
+        </button>
+        <input ref={fileInputRef} type="file" onChange={handleFile} className="hidden" />
+      </header>
+    </div>
   );
 }

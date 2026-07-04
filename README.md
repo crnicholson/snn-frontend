@@ -1,3 +1,3 @@
-# SNN Frontend
+# Mr. Spiky Frontend
 
-[snn.crnicholson.com](https://snn.crnicholson.com).
+[mr-spiky.crnicholson.com](https://mr-spiky.crnicholson.com).

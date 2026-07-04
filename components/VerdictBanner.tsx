@@ -1,86 +1,146 @@
 "use client";
 
-import { CompileResult } from "@/lib/types";
+import { CompileResult, LintFinding } from "@/lib/types";
 
 type Props = {
+  snnEnabled: boolean;
+  lintEnabled: boolean;
   result: CompileResult | null;
   isCompiling: boolean;
   error: string | null;
   notice: string | null;
+  lintFindings: LintFinding[];
   onJumpToLine: (line: number) => void;
 };
 
+function lintVerdict(findings: LintFinding[]): string {
+  if (findings.length === 0) return "No lint findings — reads clean by the rulebook";
+  const errors = findings.filter((f) => f.severity === "error").length;
+  return `${findings.length} lint finding${findings.length === 1 ? "" : "s"}${
+    errors ? ` (${errors} error${errors === 1 ? "" : "s"})` : ""
+  }`;
+}
+
 export default function VerdictBanner({
+  snnEnabled,
+  lintEnabled,
   result,
   isCompiling,
   error,
   notice,
+  lintFindings,
   onJumpToLine,
 }: Props) {
   if (error) {
     return (
-      <div className="rounded-md border border-[#ff5468]/40 bg-[#ff5468]/10 px-4 py-3">
-        <p className="font-mono text-xs uppercase tracking-wider text-[#ff5468]">Connection fault</p>
-        <p className="mt-1 text-sm text-[#e7e9ec]">{error}</p>
+      <div className="border-b border-l-2 border-[#3c3c3c] border-l-[#f14c4c] bg-[#252526] px-3 py-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#f14c4c]">
+          Connection fault
+        </p>
+        <p className="mt-1 text-xs text-[#cccccc]">{error}</p>
       </div>
     );
   }
 
   if (notice) {
     return (
-      <div className="rounded-md border border-[#ffb454]/30 bg-[#ffb454]/[0.06] px-4 py-3">
-        <p className="text-sm text-[#ffb454]">{notice}</p>
+      <div className="border-b border-l-2 border-[#3c3c3c] border-l-[#cca700] bg-[#252526] px-3 py-2.5">
+        <p className="text-xs text-[#e2c08d]">{notice}</p>
       </div>
     );
   }
 
-  if (!result) {
+  if (!snnEnabled && !lintEnabled) {
     return (
-      <div className="rounded-md border border-[#22262b] bg-[#111317] px-4 py-3">
-        <p className="text-sm text-[#868c98]">
-          {isCompiling ? "Reading code…" : "Waiting for input"}
-        </p>
+      <div className="border-b border-[#3c3c3c] bg-[#252526] px-3 py-2.5">
+        <p className="text-xs text-[#969696]">No engines enabled — check SNN or Lint above.</p>
       </div>
     );
   }
 
-  const hasFlags = result.top_flagged.length > 0;
+  const snnWaiting = snnEnabled && !result;
+  const snnFlagged = snnEnabled ? (result?.top_flagged ?? []) : [];
+  const snnHasFlags = snnFlagged.length > 0;
+  const lintLines = new Set(lintFindings.map((f) => f.line));
+  const snnLines = new Set(snnFlagged);
+  const agreement = [...snnLines].filter((l) => lintLines.has(l));
+
+  const hasAnyFlags = (snnEnabled && snnHasFlags) || (lintEnabled && lintFindings.length > 0);
 
   return (
     <div
-      className={`rounded-md border px-4 py-3 transition-colors ${
-        hasFlags
-          ? "border-[#ff5468]/40 bg-[#ff5468]/10"
-          : "border-[#3ddc84]/30 bg-[#3ddc84]/[0.06]"
+      className={`border-b border-l-2 border-[#3c3c3c] bg-[#252526] px-3 py-2.5 transition-colors ${
+        hasAnyFlags ? "border-l-[#f14c4c]" : "border-l-[#89d185]"
       }`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <p
-          className={`text-sm font-medium ${
-            hasFlags ? "text-[#ff8f9b]" : "text-[#3ddc84]"
-          }`}
-        >
-          {result.verdict}
-        </p>
-        {isCompiling && (
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[#868c98]">
-            re-reading…
-          </span>
-        )}
-      </div>
-      {hasFlags && (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <span className="font-mono text-[10px] text-[#868c98]">top offenders</span>
-          {result.top_flagged.map((line) => (
+      {snnEnabled && (
+        <div className="flex items-center justify-between gap-3">
+          <p
+            className={`text-xs font-medium ${
+              snnWaiting ? "text-[#969696]" : snnHasFlags ? "text-[#f48771]" : "text-[#89d185]"
+            }`}
+          >
+            <span className="text-[#f48771]">SNN · </span>
+            {snnWaiting ? (isCompiling ? "Reading code…" : "Waiting for input") : result?.verdict}
+          </p>
+          {isCompiling && !snnWaiting && (
+            <span className="text-[10px] uppercase tracking-wide text-[#969696]">
+              re-reading…
+            </span>
+          )}
+        </div>
+      )}
+      {snnEnabled && snnHasFlags && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] text-[#969696]">top offenders</span>
+          {snnFlagged.map((line) => (
             <button
               key={line}
               onClick={() => onJumpToLine(line)}
-              className="rounded border border-[#ff5468]/30 bg-[#ff5468]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#ff8f9b] transition-colors hover:bg-[#ff5468]/20"
+              className="rounded-sm border border-[#f14c4c]/40 bg-[#f14c4c]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#f48771] transition-colors hover:bg-[#f14c4c]/20"
             >
               {line}
             </button>
           ))}
         </div>
+      )}
+
+      {snnEnabled && lintEnabled && <div className="my-2 border-t border-[#3c3c3c]" />}
+
+      {lintEnabled && (
+        <div>
+          <p
+            className={`text-xs font-medium ${
+              lintFindings.length > 0 ? "text-[#f48771]" : "text-[#89d185]"
+            }`}
+          >
+            <span className="text-[#4fc1ff]">Lint · </span>
+            {lintVerdict(lintFindings)}
+          </p>
+          {lintFindings.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] text-[#969696]">findings</span>
+              {lintFindings.slice(0, 6).map((f, i) => (
+                <button
+                  key={`${f.line}-${f.rule}-${i}`}
+                  onClick={() => onJumpToLine(f.line)}
+                  title={f.message}
+                  className="rounded-sm border border-[#4fc1ff]/40 bg-[#4fc1ff]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#4fc1ff] transition-colors hover:bg-[#4fc1ff]/20"
+                >
+                  {f.line}:{f.rule}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {snnEnabled && lintEnabled && (snnHasFlags || lintFindings.length > 0) && (
+        <p className="mt-2 border-t border-[#3c3c3c] pt-2 text-[10px] leading-relaxed text-[#6a6a6a]">
+          {agreement.length > 0
+            ? `${agreement.length} line${agreement.length === 1 ? "" : "s"} flagged by both engines — high-confidence signal.`
+            : "No overlap this run — each engine is catching something the other misses."}
+        </p>
       )}
     </div>
   );

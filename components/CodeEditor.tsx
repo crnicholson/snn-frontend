@@ -5,36 +5,39 @@ import { EditorView } from "@codemirror/view";
 import { useEffect, useMemo, useRef } from "react";
 import { codeMirrorExtension } from "@/lib/language";
 import { heatmapExtension } from "@/lib/heatmapExtension";
-import { Language, LineFeedback } from "@/lib/types";
+import { Language, LineFeedback, LintFinding } from "@/lib/types";
 
 const instrumentTheme = EditorView.theme(
   {
     "&": {
-      backgroundColor: "#111317",
+      backgroundColor: "#1e1e1e",
       height: "100%",
-      fontSize: "13.5px",
+      fontSize: "14px",
     },
     ".cm-content": {
-      fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
-      caretColor: "#ffb454",
+      fontFamily: "var(--font-geist-mono), Consolas, ui-monospace, monospace",
+      caretColor: "#aeafad",
     },
     ".cm-gutters": {
-      backgroundColor: "#111317",
-      color: "#4d525c",
+      backgroundColor: "#1e1e1e",
+      color: "#858585",
       border: "none",
     },
     ".cm-activeLine": {
-      backgroundColor: "rgba(255,255,255,0.03)",
+      backgroundColor: "#2a2d2e",
     },
     ".cm-activeLineGutter": {
-      backgroundColor: "rgba(255,255,255,0.04)",
-      color: "#c7cbd1",
+      backgroundColor: "#2a2d2e",
+      color: "#c6c6c6",
     },
     "&.cm-focused": {
       outline: "none",
     },
     ".cm-scroller": {
       overflow: "auto",
+    },
+    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
+      backgroundColor: "#264f78 !important",
     },
   },
   { dark: true }
@@ -47,6 +50,7 @@ type Props = {
   onChange: (code: string) => void;
   language: Language;
   lineFeedback: LineFeedback[];
+  lintFindings: LintFinding[];
   onSelectLine: (line: number) => void;
   jumpTarget: JumpTarget | null;
 };
@@ -56,6 +60,7 @@ export default function CodeEditor({
   onChange,
   language,
   lineFeedback,
+  lintFindings,
   onSelectLine,
   jumpTarget,
 }: Props) {
@@ -74,11 +79,11 @@ export default function CodeEditor({
   const extensions = useMemo(
     () => [
       ...codeMirrorExtension(language),
-      heatmapExtension(lineFeedback),
+      heatmapExtension(lineFeedback, lintFindings),
       instrumentTheme,
       selectionListener,
     ],
-    [language, lineFeedback, selectionListener]
+    [language, lineFeedback, lintFindings, selectionListener]
   );
 
   useEffect(() => {
