@@ -10,25 +10,25 @@ import { Language, LineFeedback, LintFinding } from "@/lib/types";
 const instrumentTheme = EditorView.theme(
   {
     "&": {
-      backgroundColor: "#1e1e1e",
+      backgroundColor: "var(--bg-base)",
       height: "100%",
       fontSize: "14px",
     },
     ".cm-content": {
       fontFamily: "var(--font-geist-mono), Consolas, ui-monospace, monospace",
-      caretColor: "#aeafad",
+      caretColor: "var(--caret)",
     },
     ".cm-gutters": {
-      backgroundColor: "#1e1e1e",
-      color: "#858585",
+      backgroundColor: "var(--bg-base)",
+      color: "var(--text-muted)",
       border: "none",
     },
     ".cm-activeLine": {
-      backgroundColor: "#2a2d2e",
+      backgroundColor: "var(--bg-elevated)",
     },
     ".cm-activeLineGutter": {
-      backgroundColor: "#2a2d2e",
-      color: "#c6c6c6",
+      backgroundColor: "var(--bg-elevated)",
+      color: "var(--text-primary)",
     },
     "&.cm-focused": {
       outline: "none",
@@ -37,7 +37,7 @@ const instrumentTheme = EditorView.theme(
       overflow: "auto",
     },
     ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
-      backgroundColor: "#264f78 !important",
+      backgroundColor: "var(--selection) !important",
     },
   },
   { dark: true }

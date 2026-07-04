@@ -36,7 +36,7 @@ export default function InfoTip({ text }: Props) {
           <div
             role="tooltip"
             style={{ top: pos.top, right: pos.right }}
-            className="fixed z-50 w-64 rounded-sm border border-[#454545] bg-[#1e1e1e] p-2 text-left text-[10px] font-sans font-normal normal-case leading-relaxed text-[#cccccc] shadow-lg"
+            className="fixed z-50 w-64 rounded-sm border border-(--border-strong) bg-(--bg-base) p-2 text-left text-[10px] font-sans font-normal normal-case leading-relaxed text-(--text-primary) shadow-lg"
           >
             {text}
           </div>,

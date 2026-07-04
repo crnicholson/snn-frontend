@@ -1,70 +1,247 @@
 @import "tailwindcss";
 
+
+
+/* ============================================================
+
+Mr. Spiky theme tokens — "The Inspector"
+
+Everything below is the single source of truth for color.
+
+To ship a new mini-theme, override this block (or add a
+
+`[data-theme="..."]` block that redefines the same variables).
+
+============================================================ */
+
 :root {
-  --background: #1e1e1e;
-  --foreground: #cccccc;
+
+  /* Surfaces, darkest to lightest */
+
+  --bg-base: #14161c;
+
+  --bg-surface: #1b1e27;
+
+  --bg-surface-alt: #242835;
+
+  --bg-elevated: #2c3140;
+
+
+
+  /* Structure */
+
+  --border: #333a4a;
+
+  --border-strong: #4b5268;
+
+  --divider-shadow: rgba(0, 0, 0, 0.4);
+
+
+
+  /* Text */
+
+  --text-primary: #ece7d8;
+
+  --text-secondary: #a3a8ba;
+
+  --text-muted: #6b7086;
+
+  --text-bright: #fbf8ef;
+
+
+
+  /* Brand / interactive (the monocle-lamp accent) */
+
+  --accent: #8a67b3;
+
+  --accent-strong: #a883cf;
+
+
+
+  /* Semantic signal colors — SNN "gut instinct" vs. Lint "rulebook",
+
+plus shared success/warning states */
+
+  --danger: #dd5c67;
+
+  --danger-light: #f0888f;
+
+  --success: #78d3a0;
+
+  --warning: #d9a441;
+
+  --warning-light: #e8c17a;
+
+  --info: #5fc7d6;
+
+
+
+  /* Derived — kept as aliases so they track the tokens above */
+
+  --spike-idle: var(--warning);
+
+  --spike-hot: var(--danger);
+
+  --selection: rgba(138, 103, 179, 0.35);
+
+  --caret: var(--accent-strong);
+
+  --scrollbar-thumb: rgba(75, 82, 104, 0.55);
+
+  --scrollbar-thumb-hover: rgba(75, 82, 104, 0.8);
+
+
+
+  /* Mr. Spiky mascot — a distinguished spiky little instrument with a
+
+monocle. Kept separate from the UI accent since a monocle rim is
+
+brass no matter what mini-theme is active. */
+
+  --mascot-body: #b98a52;
+
+  --mascot-body-dark: #8f6a3e;
+
+  --mascot-spike: var(--danger);
+
+  --mascot-monocle-rim: #eab654;
+
+  --mascot-monocle-glass: rgba(236, 231, 216, 0.16);
+
+  --mascot-eye: var(--bg-base);
+
+
+
+  --background: var(--bg-base);
+
+  --foreground: var(--text-primary);
+
 }
+
+
 
 @theme inline {
+
   --color-background: var(--background);
+
   --color-foreground: var(--foreground);
+
   --font-sans: var(--font-geist-sans);
+
   --font-mono: var(--font-geist-mono);
+
 }
+
+
 
 html,
+
 body {
+
   height: 100%;
+
 }
+
+
 
 body {
+
   background: var(--background);
+
   color: var(--foreground);
+
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", var(--font-geist-sans), sans-serif;
+
   font-size: 13px;
+
 }
 
-/* VS Code-style thin scrollbars */
+
+
+/* Thin scrollbars, themed */
+
 * {
+
   scrollbar-width: thin;
-  scrollbar-color: #79797966 transparent;
+
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+
 }
+
+
 
 *::-webkit-scrollbar {
+
   width: 12px;
+
   height: 12px;
+
 }
+
+
 
 *::-webkit-scrollbar-track {
+
   background: transparent;
+
 }
+
+
 
 *::-webkit-scrollbar-thumb {
-  background-color: #79797966;
+
+  background-color: var(--scrollbar-thumb);
+
   border: 3px solid transparent;
+
   background-clip: padding-box;
+
 }
+
+
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: #79797999;
+
+  background-color: var(--scrollbar-thumb-hover);
+
 }
+
+
 
 @keyframes spike-grow {
+
   from {
+
     transform: scaleY(0);
+
   }
+
   to {
+
     transform: scaleY(1);
+
   }
+
 }
+
+
 
 .spike-bar {
+
   transform-origin: bottom;
+
   animation: spike-grow 260ms ease-out backwards;
+
 }
 
+
+
 @media (prefers-reduced-motion: reduce) {
+
   .spike-bar {
+
     animation: none;
+
   }
+
 }

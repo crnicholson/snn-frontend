@@ -180,7 +180,7 @@ export default function IntuitionCompiler() {
   }, []);
 
   if (!ready) {
-    return <div className="flex h-full items-center justify-center bg-[#1e1e1e]" />;
+    return <div className="flex h-full items-center justify-center bg-(--bg-base)" />;
   }
 
   const hasCode = code.trim().length > 0;
@@ -195,7 +195,7 @@ export default function IntuitionCompiler() {
   const inspectorLintFindings = visibleLintFindings.filter((f) => f.line === selectedLine);
 
   return (
-    <div className="flex h-full flex-col bg-[#1e1e1e]">
+    <div className="flex h-full flex-col bg-(--bg-base)">
       <TopBar
         language={language}
         onLanguageChange={setLanguage}
@@ -217,7 +217,7 @@ export default function IntuitionCompiler() {
             jumpTarget={jumpTarget}
           />
         </div>
-        <div className="flex w-full flex-col border-t border-[#3c3c3c] lg:w-80 lg:border-l lg:border-t-0">
+        <div className="flex w-full flex-col border-t border-(--border) lg:w-80 lg:border-l lg:border-t-0">
           <ModeBanner health={settings.mode === "server" && settings.snnEnabled ? health : null} />
           <VerdictBanner
             snnEnabled={settings.snnEnabled}

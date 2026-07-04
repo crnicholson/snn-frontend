@@ -2,6 +2,7 @@
 
 import { AXIS_DESCRIPTIONS, AXIS_LABELS, AxisKey, LineFeedback, LintFinding, SCORE_DESCRIPTION } from "@/lib/types";
 import InfoTip from "./InfoTip";
+import MrSpikyMascot from "./MrSpikyMascot";
 
 type Props = {
   selectedLine: number | null;
@@ -30,13 +31,16 @@ export default function LineInspector({
 }: Props) {
   if (selectedLine === null) {
     return (
-      <div className="flex-1 bg-[#252526] p-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#cccccc]">
+      <div className="flex-1 bg-(--bg-surface) p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-(--text-primary)">
           Line Inspector
         </p>
-        <p className="mt-2 text-xs text-[#6a6a6a]">
-          Click a line in the editor to inspect its axes.
-        </p>
+        <div className="mt-3 flex items-start gap-2">
+          <MrSpikyMascot mood="curious" className="h-8 w-8 shrink-0" />
+          <p className="mt-1 text-xs text-(--text-muted)">
+            Click a line to put it under the monocle.
+          </p>
+        </div>
       </div>
     );
   }
@@ -45,26 +49,26 @@ export default function LineInspector({
   const hasLintSignal = lintEnabled && lintFindings.length > 0;
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#252526] p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#cccccc]">
+    <div className="flex-1 overflow-y-auto bg-(--bg-surface) p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-(--text-primary)">
         Line {selectedLine}
       </p>
 
       {snnEnabled && (
         <div className="mt-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#f48771]">SNN</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-(--danger-light)">SNN</p>
           {!hasSnnSignal || !lineFeedback ? (
-            <p className="mt-1 text-xs text-[#6a6a6a]">No signal on this line.</p>
+            <p className="mt-1 text-xs text-(--text-muted)">No signal on this line.</p>
           ) : (
             <>
               <div className="mt-1 flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs text-[#969696]">
+                <span className="flex items-center gap-1 text-xs text-(--text-secondary)">
                   score
                   <InfoTip text={SCORE_DESCRIPTION} />
                 </span>
                 <span
                   className={`font-mono text-xs font-semibold ${
-                    lineFeedback.flag ? "text-[#f14c4c]" : "text-[#e2c08d]"
+                    lineFeedback.flag ? "text-(--danger)" : "text-(--warning-light)"
                   }`}
                 >
                   {lineFeedback.score.toFixed(2)}
@@ -79,22 +83,22 @@ export default function LineInspector({
                     <div key={axis} className="flex items-center gap-2">
                       <span
                         className={`flex w-28 shrink-0 items-center gap-1 text-[10px] ${
-                          isDominant ? "text-[#f48771]" : "text-[#969696]"
+                          isDominant ? "text-(--danger-light)" : "text-(--text-secondary)"
                         }`}
                       >
                         {AXIS_LABELS[axis]}
                         {isDominant ? " ●" : ""}
                         <InfoTip text={AXIS_DESCRIPTIONS[axis]} />
                       </span>
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-sm bg-[#3c3c3c]">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-sm bg-(--border)">
                         <div
                           className={`h-full rounded-sm ${
-                            isDominant ? "bg-[#f14c4c]" : "bg-[#6a6a6a]"
+                            isDominant ? "bg-(--danger)" : "bg-(--text-muted)"
                           }`}
                           style={{ width: `${Math.min(value, 1) * 100}%` }}
                         />
                       </div>
-                      <span className="w-8 shrink-0 text-right font-mono text-[10px] text-[#6a6a6a]">
+                      <span className="w-8 shrink-0 text-right font-mono text-[10px] text-(--text-muted)">
                         {value.toFixed(2)}
                       </span>
                     </div>
@@ -103,14 +107,14 @@ export default function LineInspector({
               </div>
 
               {lineFeedback.reason && (
-                <p className="mt-2 text-xs leading-relaxed text-[#cccccc]">
+                <p className="mt-2 text-xs leading-relaxed text-(--text-primary)">
                   {lineFeedback.reason}
                 </p>
               )}
 
               {lineFeedback.context && (
-                <p className="mt-1.5 font-mono text-[10px] text-[#6a6a6a]">
-                  inside <span className="text-[#969696]">{lineFeedback.context.function}</span>{" "}
+                <p className="mt-1.5 font-mono text-[10px] text-(--text-muted)">
+                  inside <span className="text-(--text-secondary)">{lineFeedback.context.function}</span>{" "}
                   (lines {lineFeedback.context.span[0]}–{lineFeedback.context.span[1]}) · fn score{" "}
                   {lineFeedback.context.function_score.toFixed(2)}
                 </p>
@@ -120,25 +124,25 @@ export default function LineInspector({
         </div>
       )}
 
-      {snnEnabled && lintEnabled && <div className="my-3 border-t border-[#3c3c3c]" />}
+      {snnEnabled && lintEnabled && <div className="my-3 border-t border-(--border)" />}
 
       {lintEnabled && (
         <div className={snnEnabled ? "" : "mt-2.5"}>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#4fc1ff]">Lint</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-(--info)">Lint</p>
           {!hasLintSignal ? (
-            <p className="mt-1 text-xs text-[#6a6a6a]">No findings on this line.</p>
+            <p className="mt-1 text-xs text-(--text-muted)">No findings on this line.</p>
           ) : (
             <ul className="mt-1.5 space-y-1.5">
               {lintFindings.map((f, i) => (
                 <li key={`${f.rule}-${i}`} className="text-xs leading-relaxed">
                   <span
                     className={`font-mono text-[10px] font-semibold ${
-                      f.severity === "error" ? "text-[#f14c4c]" : "text-[#e2c08d]"
+                      f.severity === "error" ? "text-(--danger)" : "text-(--warning-light)"
                     }`}
                   >
                     {f.rule}
                   </span>{" "}
-                  <span className="text-[#cccccc]">{f.message}</span>
+                  <span className="text-(--text-primary)">{f.message}</span>
                 </li>
               ))}
             </ul>

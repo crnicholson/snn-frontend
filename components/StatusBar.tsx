@@ -37,8 +37,8 @@ export default function StatusBar({
 
   return (
     <footer
-      className={`flex h-[22px] shrink-0 items-center justify-between px-2 text-[11px] text-white ${
-        isServerBad ? "bg-[#cca700] text-[#1e1e1e]" : "bg-[#007acc]"
+      className={`flex h-[22px] shrink-0 items-center justify-between px-2 text-[11px] text-(--text-bright) ${
+        isServerBad ? "bg-(--warning) text-(--bg-base)" : "bg-(--accent)"
       }`}
     >
       <div className="flex items-center gap-3">
@@ -47,10 +47,10 @@ export default function StatusBar({
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 healthError
-                  ? "bg-[#f14c4c]"
+                  ? "bg-(--danger)"
                   : health?.mode === "mock"
-                    ? "bg-[#1e1e1e]"
-                    : "bg-white"
+                    ? "bg-(--bg-base)"
+                    : "bg-(--text-bright)"
               }`}
             />
             {settings.mode === "fake" ? "fake mode" : health ? `server · ${health.mode}` : "server · offline"}

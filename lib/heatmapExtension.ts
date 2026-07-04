@@ -4,21 +4,31 @@ import { LineFeedback, LintFinding } from "./types";
 
 // Bands follow the backend's score interpretation cheat-sheet:
 // <0.5 normal, 0.5-0.7 subtle, 0.7-0.9 warm (hover only), >=0.9 flagged.
+function mix(color: string, pct: number): string {
+  return `color-mix(in srgb, ${color} ${Math.round(pct * 100)}%, transparent)`;
+}
+
+// Blends warning -> danger so the "warm" band reads as a heat gradient
+// rather than a flat amber, without needing its own dedicated token.
+function warmColor(): string {
+  return "color-mix(in srgb, var(--danger) 45%, var(--warning))";
+}
+
 function snnStyleFor(fb: LineFeedback): string | null {
   if (fb.score < 0.5) return null;
 
   if (fb.flag) {
     const alpha = 0.28 + fb.score * 0.32;
-    return `background-color: rgba(239, 68, 68, ${alpha}); border-left: 3px solid rgba(239, 68, 68, 0.9);`;
+    return `background-color: ${mix("var(--danger)", alpha)}; border-left: 3px solid ${mix("var(--danger)", 0.9)};`;
   }
 
   if (fb.score >= 0.7) {
     const alpha = 0.14 + (fb.score - 0.7) * 0.6;
-    return `background-color: rgba(255, 148, 68, ${alpha}); border-left: 2px solid rgba(255, 148, 68, 0.55);`;
+    return `background-color: ${mix(warmColor(), alpha)}; border-left: 2px solid ${mix(warmColor(), 0.55)};`;
   }
 
   const alpha = 0.06 + (fb.score - 0.5) * 0.4;
-  return `background-color: rgba(255, 180, 84, ${alpha});`;
+  return `background-color: ${mix("var(--warning)", alpha)};`;
 }
 
 function snnTooltipFor(fb: LineFeedback): string | null {
@@ -30,7 +40,7 @@ function snnTooltipFor(fb: LineFeedback): string | null {
 // flagged by both engines is visibly distinct from one flagged by only one.
 function lintStyleFor(findings: LintFinding[]): string {
   const hasError = findings.some((f) => f.severity === "error");
-  const color = hasError ? "rgba(79, 193, 255, 0.95)" : "rgba(79, 193, 255, 0.6)";
+  const color = mix("var(--info)", hasError ? 0.95 : 0.6);
   return `border-right: 3px solid ${color};`;
 }
 
